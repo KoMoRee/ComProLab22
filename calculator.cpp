@@ -1,66 +1,258 @@
 #include <windows.h>
+#include <stdlib.h>
+#include <string>
+#include <iostream>
+#include <tchar.h>
 
-/* This is where all the input to the window goes to */
-LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
-	switch(Message) {
-		
-		/* Upon destruction, tell the main thread to stop */
-		case WM_DESTROY: {
-			PostQuitMessage(0);
-			break;
-		}
-		
-		/* All other messages (a lot of them) are processed using default procedures */
-		default:
-			return DefWindowProc(hwnd, Message, wParam, lParam);
-	}
-	return 0;
+#define FILE_MENU_NEW 1
+#define FILE_MENU_OPEN 2
+#define FILE_MENU_EXIT 3
+#define CHANGE_TITLE 4
+#define ADD 5
+#define MINUS 6
+#define MULTIPLY 7
+#define DIVIND 8
+
+using namespace std;
+
+LRESULT CALLBACK WindowProcedure(HWND, UINT, WPARAM, LPARAM);
+
+void addMenus(HWND);
+void addControls(HWND);
+void calculateResult(HWND, wchar_t*, wchar_t*, int);
+void showResult(HWND, wchar_t);
+
+HMENU hMenu;
+HWND hNum1;
+HWND hNum2;
+
+
+
+
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdshow)
+{
+    WNDCLASSW wc = {0};
+
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+25);
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hInstance = hInst;
+    wc.lpszClassName = L"myWindowClass";
+    wc.lpfnWndProc = WindowProcedure;
+
+    if(!RegisterClassW(&wc))
+        return -1;
+
+
+
+    CreateWindowW(L"myWindowClass", L"MY Calculator",
+                  WS_VISIBLE | WS_SYSMENU,
+                  100, 100, 250, 200,
+                  NULL, NULL, NULL, NULL);
+
+
+
+
+    MSG msg = {0};
+
+    while(GetMessage(&msg, NULL, NULL, NULL))
+    {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+
+    return 0;
 }
 
-/* The 'main' function of Win32 GUI programs: this is where execution starts */
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-	WNDCLASSEX wc; /* A properties struct of our window */
-	HWND hwnd; /* A 'HANDLE', hence the H, or a pointer to our window */
-	MSG msg; /* A temporary location for all messages */
+LRESULT CALLBACK WindowProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
+{
+    switch(msg)
+    {
 
-	/* zero out the struct and set the stuff we want to modify */
-	memset(&wc,0,sizeof(wc));
-	wc.cbSize	 = sizeof(WNDCLASSEX);
-	wc.lpfnWndProc	 = WndProc; /* This is where we will send messages to */
-	wc.hInstance	 = hInstance;
-	wc.hCursor	 = LoadCursor(NULL, IDC_ARROW);
-	
-	/* White, COLOR_WINDOW is just a #define for a system color, try Ctrl+Clicking it */
-	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
-	wc.lpszClassName = "WindowClass";
-	wc.hIcon	 = LoadIcon(NULL, IDI_APPLICATION); /* Load a standard icon */
-	wc.hIconSm	 = LoadIcon(NULL, IDI_APPLICATION); /* use the name "A" to use the project icon */
+    case WM_COMMAND:
 
-	if(!RegisterClassEx(&wc)) {
-		MessageBox(NULL, "Window Registration Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
-		return 0;
-	}
+        switch(wp)
+        {
+        case FILE_MENU_EXIT:
+            DestroyWindow(hWnd);
 
-	hwnd = CreateWindowEx(WS_EX_CLIENTEDGE,"WindowClass","Caption",WS_VISIBLE|WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, /* x */
-		CW_USEDEFAULT, /* y */
-		640, /* width */
-		480, /* height */
-		NULL,NULL,hInstance,NULL);
+            break;
 
-	if(hwnd == NULL) {
-		MessageBox(NULL, "Window Creation Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
-		return 0;
-	}
+        case FILE_MENU_NEW:
 
-	/*
-		This is the heart of our program where all input is processed and 
-		sent to WndProc. Note that GetMessage blocks code flow until it receives something, so
-		this loop will not produce unreasonably high CPU usage
-	*/
-	while(GetMessage(&msg, NULL, 0, 0) > 0) { /* If no error is received... */
-		TranslateMessage(&msg); /* Translate key codes to chars if present */
-		DispatchMessage(&msg); /* Send it to WndProc */
-	}
-	return msg.wParam;
+            MessageBeep(MB_ICONINFORMATION);
+
+            break;
+        case CHANGE_TITLE:
+            wchar_t text[100];
+            GetWindowTextW(hNum1, text, 100);
+            SetWindowTextW(hWnd, text);
+
+            break;
+
+        case ADD:
+            wchar_t ADDnum1[100];
+            wchar_t ADDnum2[100];
+            GetWindowTextW(hNum1, ADDnum1, 100);
+            GetWindowTextW(hNum2, ADDnum2, 100);
+
+            calculateResult(hWnd, ADDnum1, ADDnum2, ADD);
+            break;
+
+        case MINUS:
+            wchar_t MINUSnum1[100];
+            wchar_t MINUSnum2[100];
+            GetWindowTextW(hNum1, MINUSnum1, 100);
+            GetWindowTextW(hNum2, MINUSnum2, 100);
+
+            calculateResult(hWnd, MINUSnum1, MINUSnum2, MINUS);
+            break;
+
+        case MULTIPLY:
+            wchar_t MULTIPLYnum1[100];
+            wchar_t MULTIPLYnum2[100];
+            GetWindowTextW(hNum1, MULTIPLYnum1, 100);
+            GetWindowTextW(hNum2, MULTIPLYnum2, 100);
+
+            calculateResult(hWnd, MULTIPLYnum1, MULTIPLYnum2, MULTIPLY);
+            break;
+
+        case DIVIND:
+            wchar_t DIVINDnum1[100];
+            wchar_t DIVINDnum2[100];
+            GetWindowTextW(hNum1, DIVINDnum1, 100);
+            GetWindowTextW(hNum2, DIVINDnum2, 100);
+
+            calculateResult(hWnd, DIVINDnum1, DIVINDnum2, DIVIND);
+            break;
+        }
+        break;
+
+    case WM_CREATE:
+        addMenus(hWnd);
+        addControls(hWnd);
+
+
+        break;
+
+
+
+    case WM_DESTROY:
+
+        PostQuitMessage(0);
+
+        break;
+
+    default:
+        return DefWindowProcW(hWnd, msg, wp, lp);
+    }
 }
+
+void addMenus(HWND hWnd)
+{
+    hMenu = CreateMenu();
+    HMENU hFileMenu = CreateMenu();
+    HMENU hSubMenu = CreateMenu();
+
+    AppendMenu(hSubMenu, MF_STRING, CHANGE_TITLE, "SubMenu Item");
+
+
+    AppendMenu(hFileMenu, MF_STRING, FILE_MENU_NEW, "New");
+    AppendMenu(hFileMenu, MF_POPUP, (UINT_PTR) hSubMenu, "Open SubMenu");
+    AppendMenu(hFileMenu, MF_SEPARATOR, NULL, NULL);
+    AppendMenu(hFileMenu, MF_STRING, FILE_MENU_EXIT, "Exit");
+
+
+    AppendMenu(hMenu, MF_POPUP, (UINT_PTR) hFileMenu, "File");
+
+    AppendMenu(hMenu, MF_STRING, ADD, "Help");
+
+    SetMenu(hWnd, hMenu);
+}
+
+void addControls(HWND hWnd)
+{
+    CreateWindowW(L"static", L"Enter First Number :",
+                    WS_VISIBLE | WS_CHILD,
+                    10, 10, 140, 20,
+                    hWnd, NULL, NULL, NULL);
+
+    hNum1 = CreateWindowW(L"edit", L"",
+                    WS_VISIBLE | WS_CHILD | ES_MULTILINE | ES_AUTOVSCROLL,
+                    10, 30, 200, 20,
+                    hWnd, NULL, NULL, NULL);
+
+    CreateWindowW(L"static", L"Enter Second Number :",
+                    WS_VISIBLE | WS_CHILD,
+                    10, 50, 160, 20,
+                    hWnd, NULL, NULL, NULL);
+
+    hNum2 = CreateWindowW(L"edit", L"",
+                    WS_VISIBLE | WS_CHILD | ES_MULTILINE | ES_AUTOVSCROLL,
+                    10, 70, 200, 20,
+                    hWnd, NULL, NULL, NULL);
+
+    CreateWindowW(L"button", L"+",
+                    WS_VISIBLE | WS_CHILD,
+                    12.5, 100, 20, 20,
+                    hWnd, (HMENU)ADD, NULL, NULL);
+
+    CreateWindowW(L"button", L"-",
+                    WS_VISIBLE | WS_CHILD,
+                    75, 100, 20, 20,
+                    hWnd, (HMENU)MINUS, NULL, NULL);
+
+    CreateWindowW(L"button", L"*",
+                    WS_VISIBLE | WS_CHILD,
+                    137.5, 100, 20, 20,
+                    hWnd, (HMENU)MULTIPLY, NULL, NULL);
+
+    CreateWindowW(L"button", L"/",
+                    WS_VISIBLE | WS_CHILD,
+                    200, 100, 20, 20,
+                    hWnd, (HMENU)DIVIND, NULL, NULL);
+}
+
+void showResult(HWND hWnd,wchar_t *wResult)
+{
+    MessageBoxW(hWnd, wResult, L"Result", MB_OK);
+
+}
+
+void calculateResult(HWND hWnd, wchar_t *num1, wchar_t *num2, int Operator) {
+    double fN1, fN2, sum = 0;
+    cout << endl << swscanf(num1, L"%lf", &fN1);
+    cout << endl << swscanf(num2, L"%lf", &fN2);
+    cout << fN1 << " " << fN2 << "\n";
+
+    switch (Operator) {
+        case ADD:
+            sum = fN1 + fN2;
+            break;
+        case MINUS:
+            sum = fN1 - fN2;
+            break;
+        case MULTIPLY:
+            sum = fN1 * fN2;
+            break;
+        case DIVIND:
+            if (fN2 != 0)
+                sum = fN1 / fN2;
+            else {
+                MessageBoxW(hWnd, L"Cannot divide by zero!", L"Error", MB_OK);
+                return;
+            }
+            break;
+    }
+
+
+    wchar_t wResult[100];
+    swprintf(wResult, L"Result = %.2f", sum);
+
+    showResult(hWnd, wResult);
+}
+
+
+
+
+
